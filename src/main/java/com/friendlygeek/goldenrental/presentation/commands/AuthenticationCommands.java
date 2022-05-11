@@ -6,11 +6,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.Availability;
-import org.springframework.shell.component.StringInput;
-import org.springframework.shell.standard.*;
+import org.springframework.shell.standard.ShellComponent;
+import org.springframework.shell.standard.ShellMethod;
+import org.springframework.shell.standard.ShellMethodAvailability;
+import org.springframework.shell.standard.ShellOption;
 
 @ShellComponent
-public class AuthenticationCommands extends AbstractShellComponent {
+public class AuthenticationCommands extends GoldenShellComponent {
     private final AuthenticationService authService;
     private final Logger logger = LoggerFactory.getLogger(AuthenticationCommands.class);
 
@@ -21,17 +23,30 @@ public class AuthenticationCommands extends AbstractShellComponent {
 
     @ShellMethod("Log in to your account")
     @ShellMethodAvailability("isNotLoggedIn")
-    public void login() {
-        //
+    public String login(
+            @ShellOption(value = {"-u", "--username"}, defaultValue = "") String username,
+            @ShellOption(value = {"-p", "--password"}, defaultValue = "") String password
+    ) {
+        if (username.equals("")) {
+            username = getInputManually("username: ");
+        }
+
+        if (password.equals("")) {
+            password = getInputManually("password: ", true);
+        }
+
+        return authService.authenticateUser(username, password)
+                ? String.format("Log in successful%nWelcome, %s", authService.getLoggedInUser().getUsername())
+                : "Incorrect username or password";
     }
 
     @ShellMethod("Create a new account")
     @ShellMethodAvailability("isNotLoggedIn")
     public String register(
-            @ShellOption(value={"-u", "--username"}, defaultValue = "") String username,
-            @ShellOption(defaultValue = "") String email,
-            @ShellOption(defaultValue = "") String password,
-            @ShellOption(defaultValue = "") String confirmPassword,
+            @ShellOption(value = {"-u", "--username"}, defaultValue = "") String username,
+            @ShellOption(value = {"-e", "--email"}, defaultValue = "") String email,
+            @ShellOption(value = {"-p", "--password"}, defaultValue = "") String password,
+            @ShellOption(value = {"-c", "--confirm-password"}, defaultValue = "") String confirmPassword,
             @ShellOption(defaultValue = "false") boolean noConfirm
     ) {
 
@@ -58,21 +73,7 @@ public class AuthenticationCommands extends AbstractShellComponent {
             return "Failed to register: Passwords did not match";
         }
 
-        authService.register(new User(username, email, password));
-        return "Registration successful!";
-    }
-
-    @ShellMethod(key = "component string", value = "String input", group = "Components")
-    public String stringInput(boolean mask) {
-        StringInput component = new StringInput(getTerminal(), "Enter value", "myvalue");
-        component.setResourceLoader(getResourceLoader());
-        component.setTemplateExecutor(getTemplateExecutor());
-        if (mask) {
-            component.setMaskCharater('*');
-        }
-        StringInput.StringInputContext context = component.run(StringInput.StringInputContext.empty());
-        return context.getInput();
-        // return "Got value " + context.getResultValue();
+        return authService.register(new User(username, email, password)) ? "Registration successful!" : "Failed to register your user";
     }
 
     @ShellMethod("Log out of your account")
@@ -89,18 +90,5 @@ public class AuthenticationCommands extends AbstractShellComponent {
         return !authService.isAuthenticated() ? Availability.available() : Availability.unavailable("You are already logged in");
     }
 
-    private String getInputManually(String fieldName) {
-        return getInputManually(fieldName, false);
-    }
 
-    private String getInputManually(String fieldName, boolean hidden) {
-        StringInput component = new StringInput(getTerminal(), fieldName, null);
-        component.setResourceLoader(getResourceLoader());
-        component.setTemplateExecutor(getTemplateExecutor());
-        if (hidden) {
-            component.setMaskCharater('*');
-        }
-        StringInput.StringInputContext context = component.run(StringInput.StringInputContext.empty());
-        return context.getResultValue();
-    }
 }

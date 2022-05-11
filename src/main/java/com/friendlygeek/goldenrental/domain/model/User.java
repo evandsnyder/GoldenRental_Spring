@@ -1,9 +1,23 @@
 package com.friendlygeek.goldenrental.domain.model;
 
+
+import javax.persistence.*;
+import java.util.List;
+
+@Entity
 public class User {
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private long id;
+
+    @Column(unique = true)
     private String username;
+    @Column(unique = true)
     private String email;
     private String password;
+
+    @OneToMany
+    private List<Reservation> reservations;
 
     public User(String username, String email, String password) {
         this.username = username;
