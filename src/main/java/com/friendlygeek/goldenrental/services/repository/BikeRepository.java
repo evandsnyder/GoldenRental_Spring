@@ -9,6 +9,13 @@ import java.util.List;
 
 public interface BikeRepository extends CrudRepository<Bike, Long> {
 
+    /**
+     *  Query obtained from: https://stackoverflow.com/questions/29213183/sql-query-to-search-for-room-availability
+     * @param startDate - date to start the reservation on
+     * @param endDate - date to end the reservation on
+     * @return a list of bikes available within that period
+     */
+
     @Query(value = "select * from bike WHERE id NOT IN" +
             "(select BR.bike_id from reservation R JOIN bike_reservation BR ON R.id " +
             "WHERE (R.start_date <= :startDate AND R.end_date >= :endDate) " +

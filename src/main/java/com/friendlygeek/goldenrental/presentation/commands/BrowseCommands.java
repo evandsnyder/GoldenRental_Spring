@@ -63,18 +63,6 @@ public class BrowseCommands extends GoldenShellComponent {
         return builder.toString();
     }
 
-    @ShellMethod("Add a given bike to your cart")
-    @ShellMethodAvailability("isAuthenticated")
-    public void addToCart(
-            @ShellOption() long bikeId
-    ) {
-        // Check if bike is in cart
-        // else add it to the cart
-    }
-
-    public void viewCart(){}
-
-
     public Availability isAuthenticated() {
         return authService.isAuthenticated() ? Availability.available() : Availability.unavailable("You are not logged in");
     }
